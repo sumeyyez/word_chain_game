@@ -1,7 +1,5 @@
 const TIME_LIMIT = 12; // saniye
 
-const startOverlay = document.getElementById("startOverlay");
-const startGameBtn = document.getElementById("startGameBtn");
 const chainDisplay = document.getElementById("chainDisplay");
 const playerScoreEl = document.getElementById("playerScore");
 const aiScoreEl = document.getElementById("aiScore");
@@ -18,6 +16,11 @@ const gameOverOverlay = document.getElementById("gameOverOverlay");
 const finalScores = document.getElementById("finalScores");
 const winnerText = document.getElementById("winnerText");
 const playAgainBtn = document.getElementById("playAgainBtn");
+const startOverlay = document.getElementById("startOverlay");
+const startEnBtn = document.getElementById("startEnBtn");
+const startTrBtn = document.getElementById("startTrBtn");
+
+let currentLanguage = "en";
 
 let timerInterval = null;
 let timeLeft = TIME_LIMIT;
@@ -38,6 +41,7 @@ function renderChain(chain) {
       chainDisplay.appendChild(arrow);
     }
     const span = document.createElement("span");
+    // Oyuncu kelimeleri cift indeksli (0,2,4...), AI kelimeleri tek indeksli
     const globalIdx = chain.length - recent.length + idx;
     span.className = "chain-word " + (globalIdx % 2 === 0 ? "player" : "ai");
     span.textContent = word.toUpperCase();
@@ -176,12 +180,13 @@ async function handleSubmit() {
   }
 }
 
-async function startNewGame() {
+async function startNewGame(language) {
+  if (language) currentLanguage = language;
   stopTimer();
   hideGameOver();
   showMessage("", "");
   wordInput.value = "";
-  const state = await postJSON("/api/new_game", {});
+  const state = await postJSON("/api/new_game", { language: currentLanguage });
   renderState(state);
   setInputEnabled(true);
   startTimer();
@@ -191,10 +196,14 @@ submitBtn.addEventListener("click", handleSubmit);
 wordInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") handleSubmit();
 });
-newGameBtn.addEventListener("click", startNewGame);
-playAgainBtn.addEventListener("click", startNewGame);
+newGameBtn.addEventListener("click", () => startNewGame());
+playAgainBtn.addEventListener("click", () => startNewGame());
 
-startGameBtn.addEventListener("click", () => {
+startEnBtn.addEventListener("click", () => {
   startOverlay.classList.add("hidden");
-  startNewGame();
+  startNewGame("en");
+});
+startTrBtn.addEventListener("click", () => {
+  startOverlay.classList.add("hidden");
+  startNewGame("tr");
 });

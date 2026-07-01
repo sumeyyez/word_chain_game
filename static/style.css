@@ -17,7 +17,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: #000000;
+  background: radial-gradient(circle at top, #1a1f38, var(--bg) 60%);
   color: var(--text);
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   display: flex;
@@ -220,3 +220,23 @@ button.secondary {
 .overlay-card h2 { color: var(--red); margin-top: 0; }
 .overlay-card .winner { color: var(--yellow); font-weight: 700; }
 .overlay-card button { margin-top: 12px; background: var(--accent); color: #0b0e1a; }
+
+.lang-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.lang-btn {
+  flex: 1;
+  margin-top: 0;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid #2a3055;
+  font-size: 1rem;
+}
+
+.lang-btn:hover {
+  background: var(--accent);
+  color: #0b0e1a;
+}

@@ -32,40 +32,64 @@ CORRECT_POINTS = 5
 WRONG_POINTS = -4
 MIN_WORD_LEN = 3
 
+LANGUAGE_CONFIG = {
+    "en": {
+        "letters_pattern": r"[a-z]+",
+        "clean_pattern": r"[^a-z]",
+    },
+    "tr": {
+        "letters_pattern": r"[a-zçğıöşü]+",
+        "clean_pattern": r"[^a-zçğıöşü]",
+    },
+}
+
+
+def smart_lower(text: str, language: str) -> str:
+    """
+    Turkce'de standart .lower() 'I' harfini yanlis kucultur (I -> i yerine I -> ı olmali).
+    Bu fonksiyon dile gore dogru kucultmeyi yapar.
+    """
+    if language == "tr":
+        text = text.replace("İ", "i").replace("I", "ı")
+    return text.lower()
+
 
 # ---------------------------------------------------------------------------
 # Groq yardimci fonksiyonlari
 # ---------------------------------------------------------------------------
 
-def is_real_word(word: str) -> bool:
-    """Kelimenin gercek Ingilizce kelime olup olmadigini Groq ile kontrol et."""
+def is_real_word(word: str, language: str) -> bool:
+    """Kelimenin gercek bir kelime olup olmadigini Groq ile, secilen dilde kontrol et."""
     if len(word) < MIN_WORD_LEN or not word.isalpha():
         return False
     try:
+        if language == "tr":
+            content = f'"{word}" gercek, yaygin kullanilan bir Turkce kelime mi? Sadece EVET veya HAYIR yaz.'
+        else:
+            content = f'Is "{word}" a real common English word? Answer only YES or NO.'
+
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             max_tokens=5,
             temperature=0,
-            messages=[{
-                "role": "user",
-                "content": f'Is "{word}" a real common English word? Answer only YES or NO.'
-            }]
+            messages=[{"role": "user", "content": content}]
         )
         answer = response.choices[0].message.content.strip().upper()
+        if language == "tr":
+            return answer.startswith("EVET")
         return answer.startswith("YES")
     except Exception:
         return len(word) > 4
 
 
-def parse_words_from_text(text: str, letter: str, used_words: set) -> list[str]:
+def parse_words_from_text(text: str, letter: str, used_words: set, language: str) -> list[str]:
     """
     API yanitindan hedef harfle baslayan gecerli kelimeleri cikar.
-    AI bazen cumle kurarak cevap verebiliyor, bu yuzden noktalama/bosluk
-    fark etmeksizin metindeki TUM alfabetik kelimeleri tek tek cikarip
-    filtreliyoruz.
+    Dile gore (Ingilizce/Turkce) harf kumesi degisir.
     """
-    text = text.lower()
-    candidates = re.findall(r"[a-z]+", text)
+    text = smart_lower(text, language)
+    pattern = LANGUAGE_CONFIG[language]["letters_pattern"]
+    candidates = re.findall(pattern, text)
 
     possible = []
     for word in candidates:
@@ -75,47 +99,55 @@ def parse_words_from_text(text: str, letter: str, used_words: set) -> list[str]:
     return possible
 
 
-def get_ai_word(letter: str, used_words: set) -> str | None:
-    """AI'nin belirli harfle baslayan bir kelime secmesini sagla."""
+def get_ai_word(letter: str, used_words: set, language: str, recent_endings: list[str] | None = None) -> str | None:
+    """
+    AI'nin belirli harfle baslayan, secilen dilde, mumkunse cesitli bitis
+    harfine sahip bir kelime secmesini sagla.
+    """
     used_list = ", ".join(list(used_words)[-40:]) if used_words else "none"
+    recent_endings = recent_endings or []
 
     for attempt in range(2):
         try:
-            if attempt == 0:
-                prompt = (
-                    f"Give me ONE common English word that starts with the letter '{letter}'. "
-                    f"Do NOT use any of these words: {used_list}. "
-                    f"Reply with ONLY the single word, nothing else."
+            if language == "tr":
+                avoid_text = (
+                    f" Su harflerle biten kelimelerden kacinmaya calis: {', '.join(sorted(set(recent_endings)))}."
+                    if recent_endings else ""
                 )
-                max_tok = 15
-            else:
                 prompt = (
-                    f"List 8 common English words starting with '{letter}', "
-                    f"excluding: {used_list}. "
+                    f"'{letter}' harfiyle baslayan 10 tane yaygin Turkce kelime listele. "
+                    f"Su kelimeleri KULLANMA: {used_list}."
+                    f"{avoid_text} "
+                    f"Kelimelerin son harflerini mumkun oldugunca cesitlendir. "
+                    f"Her satira bir kelime yaz, numara veya noktalama kullanma."
+                )
+            else:
+                avoid_text = (
+                    f" Try to avoid words ending in these letters: {', '.join(sorted(set(recent_endings)))}."
+                    if recent_endings else ""
+                )
+                prompt = (
+                    f"List 10 common English words that start with the letter '{letter}'. "
+                    f"Do NOT use any of these words: {used_list}."
+                    f"{avoid_text} "
+                    f"Try to vary the last letters of the words as much as possible. "
                     f"One word per line, no numbers, no punctuation."
                 )
-                max_tok = 100
 
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
-                max_tokens=max_tok,
-                temperature=0.85 + attempt * 0.1,
+                max_tokens=140,
+                temperature=0.9,
                 messages=[{"role": "user", "content": prompt}]
             )
 
-            raw = response.choices[0].message.content.strip().lower()
+            raw = smart_lower(response.choices[0].message.content.strip(), language)
+            words = parse_words_from_text(raw, letter, used_words, language)
 
-            if attempt == 0:
-                word = re.sub(r"[^a-z]", "", raw.split()[0]) if raw.split() else ""
-                if word and len(word) >= MIN_WORD_LEN and word[0] == letter and word not in used_words:
-                    return word
-                words = parse_words_from_text(raw, letter, used_words)
-                if words:
-                    return random.choice(words)
-            else:
-                words = parse_words_from_text(raw, letter, used_words)
-                if words:
-                    return random.choice(words)
+            if words:
+                preferred = [w for w in words if w[-1] not in recent_endings]
+                pool = preferred if preferred else words
+                return random.choice(pool)
 
         except Exception:
             continue
@@ -127,7 +159,7 @@ def get_ai_word(letter: str, used_words: set) -> str | None:
 # Oturum durumu yardimcilari
 # ---------------------------------------------------------------------------
 
-def new_state() -> dict:
+def new_state(language: str = "en") -> dict:
     return {
         "chain": [],
         "used_words": [],
@@ -136,6 +168,7 @@ def new_state() -> dict:
         "turns": 0,
         "mistakes": 0,
         "game_over": False,
+        "language": language,
     }
 
 
@@ -167,7 +200,11 @@ def api_state():
 
 @app.route("/api/new_game", methods=["POST"])
 def api_new_game():
-    state = new_state()
+    data = request.get_json(silent=True) or {}
+    language = data.get("language", "en")
+    if language not in LANGUAGE_CONFIG:
+        language = "en"
+    state = new_state(language)
     save_state(state)
     return jsonify(state)
 
@@ -179,12 +216,15 @@ def api_submit_word():
     if state["game_over"]:
         return jsonify({**state, "message": "Oyun bitti. Yeni oyun baslat.", "message_type": "error"})
 
+    language = state.get("language", "en")
+    clean_pattern = LANGUAGE_CONFIG[language]["clean_pattern"]
+
     data = request.get_json(silent=True) or {}
-    raw_input = (data.get("word") or "").strip().lower()
+    raw_input = smart_lower((data.get("word") or "").strip(), language)
     timed_out = bool(data.get("timed_out"))
 
     used_words = set(state["used_words"])
-    required = state["chain"][-1][-1].lower() if state["chain"] else None
+    required = state["chain"][-1][-1] if state["chain"] else None
 
     def register_mistake(reason: str):
         state["mistakes"] += 1
@@ -202,7 +242,7 @@ def api_submit_word():
     if timed_out:
         return register_mistake("Sure doldu!")
 
-    word = re.sub(r"[^a-z]", "", raw_input)
+    word = re.sub(clean_pattern, "", raw_input)
 
     if not word:
         return jsonify({**state, "message": "Bos girdi, tekrar dene.", "message_type": "warn"})
@@ -216,8 +256,8 @@ def api_submit_word():
     if word in used_words:
         return jsonify({**state, "message": f"'{word}' zaten kullanildi!", "message_type": "warn"})
 
-    if not is_real_word(word):
-        return register_mistake(f"'{word}' gecerli bir Ingilizce kelime degil!")
+    if not is_real_word(word, language):
+        return register_mistake(f"'{word}' gecerli bir kelime degil!")
 
     # Kelime kabul edildi
     state["chain"].append(word)
@@ -229,7 +269,8 @@ def api_submit_word():
     messages = [f"'{word}' kabul edildi! (+{CORRECT_POINTS})"]
 
     next_letter = word[-1]
-    ai_word = get_ai_word(next_letter, used_words)
+    recent_endings = [w[-1] for w in state["chain"][-6:]]
+    ai_word = get_ai_word(next_letter, used_words, language, recent_endings=recent_endings)
 
     if ai_word:
         state["chain"].append(ai_word)
