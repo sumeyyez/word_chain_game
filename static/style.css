@@ -1,0 +1,222 @@
+:root {
+  --bg: #0f1220;
+  --panel: #171b2e;
+  --panel-2: #1f2440;
+  --text: #eef0fb;
+  --muted: #8a90b3;
+  --accent: #6c8cff;
+  --green: #3ddc97;
+  --red: #ff5d6c;
+  --yellow: #ffcd5c;
+  --magenta: #c98cff;
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #000000;
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px;
+}
+
+.app {
+  width: 100%;
+  max-width: 640px;
+}
+
+header { text-align: center; margin-bottom: 20px; }
+
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: 2px;
+  color: var(--yellow);
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.scoreboard {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.score-box {
+  flex: 1;
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 14px;
+  text-align: center;
+}
+
+.score-box .label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.score-box .value {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.mistakes {
+  text-align: center;
+  color: var(--red);
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.chain-display {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 16px;
+  min-height: 60px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.chain-display .placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.chain-word {
+  background: var(--panel-2);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.chain-word.player { color: var(--accent); }
+.chain-word.ai { color: var(--magenta); }
+
+.chain-arrow { color: var(--muted); }
+
+.timer-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.timer-bar-bg {
+  flex: 1;
+  height: 10px;
+  background: var(--panel-2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.timer-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--green), var(--yellow));
+  transition: width 0.2s linear, background 0.3s ease;
+}
+
+#timerText { color: var(--muted); font-variant-numeric: tabular-nums; width: 28px; }
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.required-letter {
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-2);
+  border-radius: 8px;
+  font-weight: 800;
+  color: var(--yellow);
+}
+
+#wordInput {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #2a3055;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+#wordInput:focus { outline: 2px solid var(--accent); }
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+#submitBtn { background: var(--accent); color: #0b0e1a; }
+#submitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.controls { text-align: center; margin-bottom: 8px; }
+
+button.secondary {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid #2a3055;
+}
+
+.message {
+  min-height: 24px;
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.message.success { color: var(--green); }
+.message.error { color: var(--red); }
+.message.warn { color: var(--yellow); }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 16, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay.hidden { display: none; }
+
+.overlay-card {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 32px;
+  text-align: center;
+  max-width: 340px;
+}
+
+.overlay-card h2 { color: var(--red); margin-top: 0; }
+.overlay-card .winner { color: var(--yellow); font-weight: 700; }
+.overlay-card button { margin-top: 12px; background: var(--accent); color: #0b0e1a; }

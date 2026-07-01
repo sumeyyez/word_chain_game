@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Chain Game</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>WORD CHAIN GAME</h1>
+      <p class="subtitle">12 saniye limit &middot; Dogru kelime +5 &middot; Yanlis/Sure -4 &middot; 2 hata = oyun biter</p>
+    </header>
+
+    <section class="scoreboard">
+      <div class="score-box">
+        <span class="label">Sen</span>
+        <span id="playerScore" class="value">0</span>
+      </div>
+      <div class="score-box">
+        <span class="label">Zincir</span>
+        <span id="turns" class="value">0</span>
+      </div>
+      <div class="score-box">
+        <span class="label">AI</span>
+        <span id="aiScore" class="value">0</span>
+      </div>
+    </section>
+
+    <section class="mistakes">
+      Hata: <span id="mistakes">0</span>/2
+    </section>
+
+    <section class="chain-display" id="chainDisplay">
+      <span class="placeholder">Ilk kelimeyi girerek zinciri baslat</span>
+    </section>
+
+    <section class="timer-wrap">
+      <div class="timer-bar-bg">
+        <div class="timer-bar" id="timerBar"></div>
+      </div>
+      <span id="timerText">12</span>s
+    </section>
+
+    <section class="input-row">
+      <span id="requiredLetter" class="required-letter"></span>
+      <input type="text" id="wordInput" placeholder="kelimeni yaz..." autocomplete="off" maxlength="30">
+      <button id="submitBtn">Gonder</button>
+    </section>
+
+    <div id="messageBox" class="message"></div>
+
+    <section class="controls">
+      <button id="newGameBtn" class="secondary">Yeni Oyun</button>
+    </section>
+
+    <div id="gameOverOverlay" class="overlay hidden">
+      <div class="overlay-card">
+        <h2>Oyun Bitti</h2>
+        <p id="finalScores"></p>
+        <p id="winnerText" class="winner"></p>
+        <button id="playAgainBtn">Tekrar Oyna</button>
+      </div>
+    </div>
+      <div id="gameOverOverlay" class="overlay hidden">
+      <div class="overlay-card">
+        <h2>Oyun Bitti</h2>
+        <p id="finalScores"></p>
+        <p id="winnerText" class="winner"></p>
+        <button id="playAgainBtn">Tekrar Oyna</button>
+      </div>
+    </div>
+
+    <div id="startOverlay" class="overlay">
+      <div class="overlay-card">
+        <h2>Word Chain Game</h2>
+          <p>Hazır olduğunda başla — süren başlayacak.</p>
+          <button id="startGameBtn">Oyuna Başla</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
