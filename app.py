@@ -155,7 +155,13 @@ def get_ai_word(letter: str, used_words: set, language: str, recent_endings: lis
             if words:
                 preferred = [w for w in words if w[-1] not in recent_endings]
                 pool = preferred if preferred else words
-                return random.choice(pool)
+                random.shuffle(pool)
+                # AI bazen uydurma/olmayan kelimeler uretebiliyor (ozellikle Turkce'de) —
+                # secmeden once gercekten var olup olmadigini dogrula. Gecikmeyi sinirli
+                # tutmak icin en fazla ilk 5 adayi kontrol ediyoruz.
+                for candidate in pool[:5]:
+                    if is_real_word(candidate, language):
+                        return candidate
 
         except Exception:
             continue
