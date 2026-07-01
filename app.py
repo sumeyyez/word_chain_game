@@ -64,20 +64,25 @@ def is_real_word(word: str, language: str) -> bool:
         return False
     try:
         if language == "tr":
-            content = f'"{word}" gercek, yaygin kullanilan bir Turkce kelime mi? Sadece EVET veya HAYIR yaz.'
+            content = (
+                f'"{word}" kelimesi gercek, standart bir Turkce sozluk kelimesi mi '
+                f'(kok/yalin hal, ozel isim degil)? Sadece EVET veya HAYIR yaz, baska hicbir sey yazma.'
+            )
+            model = "llama-3.3-70b-versatile"
         else:
             content = f'Is "{word}" a real common English word? Answer only YES or NO.'
+            model = "llama-3.1-8b-instant"
 
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            max_tokens=5,
+            model=model,
+            max_tokens=8,
             temperature=0,
             messages=[{"role": "user", "content": content}]
         )
         answer = response.choices[0].message.content.strip().upper()
         if language == "tr":
-            return answer.startswith("EVET")
-        return answer.startswith("YES")
+            return "EVET" in answer and "HAYIR" not in answer
+        return "YES" in answer and "NO" not in answer
     except Exception:
         return len(word) > 4
 
@@ -116,6 +121,9 @@ def get_ai_word(letter: str, used_words: set, language: str, recent_endings: lis
                 )
                 prompt = (
                     f"'{letter}' harfiyle baslayan 10 tane yaygin Turkce kelime listele. "
+                    f"Kelimeler MUTLAKA kok/yalin halinde olsun — cogul eki ('-lar', '-ler'), "
+                    f"iyelik eki ('-i', '-si', '-im', '-in' vb.) veya baska bir ek ALMASIN, "
+                    f"sozlukte gecen duz hali olsun. "
                     f"Su kelimeleri KULLANMA: {used_list}."
                     f"{avoid_text} "
                     f"Kelimelerin son harflerini mumkun oldugunca cesitlendir. "
